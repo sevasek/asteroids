@@ -31,7 +31,7 @@ def main():
     # Add the objects to the groups
     Player.containers = (updatable, drawable)
     Asteroid.containers = (updatable, drawable, asteroids)
-    AsteroidField.containers = (updatable)
+    AsteroidField.containers = (updatable,)
     Shot.containers = (updatable, drawable, shots)
     
     print("Import test:")
@@ -56,7 +56,6 @@ def main():
         screen.fill("black")
         
         # Tick the clock
-        clock.tick(60)  # Limit to 60 frames per second
         dt = clock.tick(60) / 1000  # Convert milliseconds to seconds
 
         # Update the player
@@ -72,7 +71,7 @@ def main():
                 sys.exit()
 
             # ... and shots
-            for s in shots:
+            for s in shots.copy():
                 if a.collides_with(s):
                     log_event("asteroid_shot")
                     print("Asteroid shot!")
