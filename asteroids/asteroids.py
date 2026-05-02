@@ -20,7 +20,7 @@ class Asteroid(CircleShape):
         self.kill()
 
         # If the asteroid is too small, don't split it
-        if self.radius < ASTEROID_MIN_RADIUS:
+        if self.radius <= ASTEROID_MIN_RADIUS:
             return
         
         # If the asteroid is big enough...
