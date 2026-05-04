@@ -4,14 +4,9 @@ from pygame import sndarray
 from constants import (
     AUDIO_COMBO_TIMEOUT,
     AUDIO_SCALE_A_MINOR_PENTATONIC,
-    AUDIO_COMBO_DURATIONS,
-    AUDIO_CHORD_MINOR_THIRD,
+    AUDIO_COMBO_BASE_DURATION,
+    AUDIO_COMBO_DURATION_STEP,
     AUDIO_DECAY_RATE,
-    AUDIO_SUSTAIN_FADE_START,
-    AUDIO_AMP_ROOT_PRIMARY,
-    AUDIO_AMP_ROOT_SECONDARY,
-    AUDIO_AMP_ROOT_CHORD,
-    AUDIO_AMP_THIRD,
 )
 
 
@@ -26,36 +21,22 @@ class ComboTracker:
         if current_time - self.last_hit_time > self.timeout:
             self.combo_position = 0
         else:
-            self.combo_position = min(self.combo_position + 1, 6)
+            self.combo_position = self.combo_position + 1
 
         self.last_hit_time = current_time
-        root_freq = self.scale[self.combo_position % len(self.scale)]
-        return self.combo_position, root_freq
+        scale_index = self.combo_position % len(self.scale)
+        frequency = self.scale[scale_index]
+        return self.combo_position, frequency
 
 
 class HitSound:
     def __init__(self, combo_position, root_frequency):
         self.position = combo_position
-        self.root = root_frequency
-        self.duration = self._get_duration()
-        self.tones = self._build_tones()
-
-    def _get_duration(self):
-        return AUDIO_COMBO_DURATIONS[self.position]
+        self.frequency = root_frequency
+        self.duration = AUDIO_COMBO_BASE_DURATION + (self.position * AUDIO_COMBO_DURATION_STEP)
 
     def _build_tones(self):
-        if self.position == 0:
-            tones = [(self.root, AUDIO_AMP_ROOT_PRIMARY, "decay")]
-        elif self.position == 1:
-            tones = [(self.root, AUDIO_AMP_ROOT_PRIMARY, "decay")]
-        elif self.position == 2:
-            tones = [(self.root, AUDIO_AMP_ROOT_SECONDARY, "sustain")]
-        elif self.position >= 3:
-            tones = [
-                (self.root, AUDIO_AMP_ROOT_CHORD, "decay"),
-                (self.root * AUDIO_CHORD_MINOR_THIRD, AUDIO_AMP_THIRD, "decay"),
-            ]
-        return tones
+        return [(self.frequency, 0.8, "decay")]
 
     def generate_waveform(self, sample_rate=44100):
         num_samples = int(sample_rate * self.duration)
