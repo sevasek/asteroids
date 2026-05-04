@@ -48,23 +48,21 @@ def draw_game_over(screen, score, starfield, leaderboard=None):
     if leaderboard:
         top_scores = leaderboard.get_top()
         if top_scores:
-            menu.add(MenuElement("HIGH SCORES", -80, LEADERBOARD_ENTRY_SIZE))
-            for i, entry in enumerate(top_scores):
-                y = -40 + i * 30
-                menu.add(MenuElement(f"{i + 1}.", y, LEADERBOARD_ENTRY_SIZE, x_offset=-140))
-                menu.add(MenuElement(entry['name'], y, LEADERBOARD_ENTRY_SIZE, x_offset=-110))
-                menu.add(MenuElement(str(entry['score']), y, LEADERBOARD_ENTRY_SIZE, x_offset=120))
-            menu.add(MenuElement("Press ENTER to restart", 220, GAME_OVER_RETRY_TEXT_SIZE))
-            menu.add(MenuElement("Press ESC for menu", 250, GAME_OVER_RETRY_TEXT_SIZE))
+            menu.add_to_top(MenuElement("HIGH SCORES", font_size=LEADERBOARD_ENTRY_SIZE))
+            for entry in top_scores:
+                menu.add_to_middle(MenuElement(entry['name'], font_size=LEADERBOARD_ENTRY_SIZE, x_offset=-140))
+                menu.add_to_middle(MenuElement(str(entry['score']), font_size=LEADERBOARD_ENTRY_SIZE, x_offset=120))
         else:
-            menu.add(MenuElement("Press ENTER to restart", -40, GAME_OVER_RETRY_TEXT_SIZE))
-            menu.add(MenuElement("Press ESC for menu", 40, GAME_OVER_RETRY_TEXT_SIZE))
+            menu.add_to_middle(MenuElement("Press ENTER to restart", font_size=GAME_OVER_RETRY_TEXT_SIZE))
+            menu.add_to_bottom(MenuElement("Press ESC for menu", font_size=GAME_OVER_RETRY_TEXT_SIZE))
+            menu.draw(screen, starfield)
+            return
     else:
-        menu.add(MenuElement("GAME OVER", -60, GAME_OVER_TEXT_SIZE))
-        menu.add(MenuElement(f"Score: {score}", 0, GAME_OVER_SUBTEXT_SIZE))
-        menu.add(MenuElement("Press ENTER to restart", 60, GAME_OVER_RETRY_TEXT_SIZE))
-        menu.add(MenuElement("Press ESC for menu", 90, GAME_OVER_RETRY_TEXT_SIZE))
+        menu.add_to_top(MenuElement("GAME OVER", font_size=GAME_OVER_TEXT_SIZE))
+        menu.add_to_middle(MenuElement(f"Score: {score}", font_size=GAME_OVER_SUBTEXT_SIZE))
 
+    menu.add_to_bottom(MenuElement("Press ENTER to restart", font_size=GAME_OVER_RETRY_TEXT_SIZE))
+    menu.add_to_bottom(MenuElement("Press ESC for menu", font_size=GAME_OVER_RETRY_TEXT_SIZE))
     menu.draw(screen, starfield)
 
 
@@ -138,29 +136,27 @@ def run_game(screen, starfield):
 
 def draw_start_menu(screen, leaderboard, starfield):
     menu = Menu()
-    menu.add(MenuElement("ASTEROIDS", -280, LEADERBOARD_TITLE_SIZE))
+    menu.add_to_top(MenuElement("ASTEROIDS", font_size=LEADERBOARD_TITLE_SIZE))
 
     top_scores = leaderboard.get_top()
     if top_scores:
-        menu.add(MenuElement("HIGH SCORES", -210, LEADERBOARD_ENTRY_SIZE))
-        for i, entry in enumerate(top_scores):
-            y = -170 + i * 30
-            menu.add(MenuElement(f"{i + 1}.", y, LEADERBOARD_ENTRY_SIZE, x_offset=-140))
-            menu.add(MenuElement(entry['name'], y, LEADERBOARD_ENTRY_SIZE, x_offset=-110))
-            menu.add(MenuElement(str(entry['score']), y, LEADERBOARD_ENTRY_SIZE, x_offset=120))
+        menu.add_to_top(MenuElement("HIGH SCORES", font_size=LEADERBOARD_ENTRY_SIZE))
+        for entry in top_scores:
+            menu.add_to_middle(MenuElement(entry['name'], font_size=LEADERBOARD_ENTRY_SIZE, x_offset=-140))
+            menu.add_to_middle(MenuElement(str(entry['score']), font_size=LEADERBOARD_ENTRY_SIZE, x_offset=120))
     else:
-        menu.add(MenuElement("No scores yet", -140, LEADERBOARD_ENTRY_SIZE))
+        menu.add_to_middle(MenuElement("No scores yet", font_size=LEADERBOARD_ENTRY_SIZE))
 
-    menu.add(MenuElement("Press ENTER to start", 280, LEADERBOARD_PROMPT_SIZE))
+    menu.add_to_bottom(MenuElement("Press ENTER to start", font_size=LEADERBOARD_PROMPT_SIZE))
     menu.draw(screen, starfield)
 
 
 def draw_name_entry(screen, score, starfield, name=""):
     menu = Menu()
-    menu.add(MenuElement("NEW HIGH SCORE!", -80, GAME_OVER_TEXT_SIZE))
-    menu.add(MenuElement(f"Score: {score}", -20, GAME_OVER_SUBTEXT_SIZE))
-    menu.add(MenuElement("Enter your name:", 30, GAME_OVER_SUBTEXT_SIZE))
-    menu.add(MenuElement(name + "_", 70, GAME_OVER_SUBTEXT_SIZE))
+    menu.add_to_top(MenuElement("NEW HIGH SCORE!", font_size=GAME_OVER_TEXT_SIZE))
+    menu.add_to_middle(MenuElement(f"Score: {score}", font_size=GAME_OVER_SUBTEXT_SIZE))
+    menu.add_to_middle(MenuElement("Enter your name:", font_size=GAME_OVER_SUBTEXT_SIZE))
+    menu.add_to_middle(MenuElement(name + "_", font_size=GAME_OVER_SUBTEXT_SIZE))
     menu.draw(screen, starfield)
 
 
