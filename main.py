@@ -15,10 +15,8 @@ def _check_pygame():
 _check_pygame()
 
 import pygame
-from audio import ComboTracker, HitSound
-from music import init_music, update_music, set_music_intensity
+from music import init_music, start_music, stop_music
 from constants import (
-    AUDIO_COMBO_TIMEOUT,
     AUDIO_SAMPLE_RATE,
     EXHAUST_COLORS,
     EXPLOSION_COUNT_LARGE_MAX,
@@ -137,7 +135,7 @@ def spawn_explosion(position, radius, explosion_particles):
         explosion_particles.append(particle)
 
 
-def check_collisions(asteroids, shots, player, explosion_particles, combo_tracker, audio_enabled, music=None):
+def check_collisions(asteroids, shots, player, explosion_particles):
     player_hit = False
     score_delta = 0
 
@@ -151,15 +149,6 @@ def check_collisions(asteroids, shots, player, explosion_particles, combo_tracke
             if a.collides_with(s):
                 log_event("asteroid_shot")
                 spawn_explosion(a.position.copy(), a.radius, explosion_particles)
-                # Play combo sound
-                if audio_enabled:
-                    combo_pos, root_freq = combo_tracker.on_hit(pygame.time.get_ticks() / 1000.0)
-                    hit_sound = HitSound(combo_pos, root_freq)
-                    hit_sound.play()
-                    if music and combo_pos >= 5:
-                        set_music_intensity(1)
-                    elif music:
-                        set_music_intensity(0)
                 a.split()
                 s.kill()
                 score_delta += 10
@@ -207,15 +196,13 @@ def run_game(screen, starfield, run_hyperdrive=True):
     else:
         music = None
 
-    # Create combo tracker
-    combo_tracker = ComboTracker(timeout=AUDIO_COMBO_TIMEOUT)
-
     updatable, drawable, asteroids, shots = create_groups()
     explosion_particles = []
     player = init_game()
     clock = pygame.time.Clock()
     score = 0
     survival_elapsed = 0
+    _first_asteroid_spawned = False
 
     while True:
         dt = min(clock.tick(60) / 1000, MAX_DELTA_TIME)
@@ -225,16 +212,18 @@ def run_game(screen, starfield, run_hyperdrive=True):
 
         starfield.update(dt)
 
-        if music:
-            update_music(dt)
-
         log_state(player, drawable, asteroids, shots)
 
         updatable.update(dt)
 
         explosion_particles = [p for p in explosion_particles if not p.update(dt)]
 
-        player_hit, delta = check_collisions(asteroids, shots, player, explosion_particles, combo_tracker, audio_enabled, music)
+        if not _first_asteroid_spawned and len(asteroids) > 0:
+            _first_asteroid_spawned = True
+            if music:
+                start_music()
+
+        player_hit, delta = check_collisions(asteroids, shots, player, explosion_particles)
         score += delta
 
         survival_elapsed += dt
