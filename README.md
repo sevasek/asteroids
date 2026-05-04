@@ -24,6 +24,10 @@ A fully functional clone of the classic 1979 Asteroids arcade game, featuring au
 - Score tracking for destroyed asteroids
 - Game over screen with retry functionality
 - JSONL-based game state and event logging
+- **Hyperdrive intro**: Star Wars-style warp tunnel animation before each game (3 seconds)
+- **Twinkling starfield**: Dynamic background with animated stars
+- **High score leaderboard**: Persistent top 10 scores with player names (up to 12 characters)
+- **Dynamic menu system**: Auto-layout menus that work with any resolution
 
 ## Installation
 
@@ -68,11 +72,11 @@ python main.py
 |-----|--------|
 | `A` | Rotate ship left |
 | `D` | Rotate ship right |
-| `W` | Thrust forward |
+| `W` | Thrust forward (with propulsion trail effect) |
 | `S` | Thrust backward |
 | `SPACE` | Shoot projectiles (0.3s cooldown) |
-| `ESC` | Quit game |
-| `ENTER` | Retry after game over |
+| `ENTER` | Start game / Restart after game over |
+| `ESC` | Return to menu / Quit game |
 
 ## Game Rules
 - Destroy asteroids by shooting them to earn 10 points per asteroid
@@ -98,6 +102,10 @@ asteroids/                  # Repository root
     ├── circleshape.py      # Base class for circular game objects
     ├── constants.py        # Game configuration and tunable settings
     ├── logger.py           # JSONL game state and event logging
+    ├── hyperdrive.py       # Star Wars-style warp tunnel intro
+    ├── starfield.py        # Twinkling star background
+    ├── menu.py             # Dynamic menu system with auto-layout
+    ├── leaderboard.py      # Persistent high score leaderboard
     ├── pyproject.toml      # Project metadata and dependencies
     ├── uv.lock             # Dependency lock file
     └── .venv/              # Virtual environment (gitignored)
@@ -105,12 +113,28 @@ asteroids/                  # Repository root
 
 ## Configuration
 All tunable game settings are defined in `asteroids/constants.py`, including:
+
+### Core Settings
 - Screen dimensions (default: 1280x720)
 - Player speed, rotation speed, and shoot cooldown
 - Asteroid spawn rate, sizes, and split behavior
-- Visual settings (line width, text sizes)
 
-Modify these constants to adjust gameplay behavior.
+### Visual Effects
+- Line width for ship and asteroid rendering
+- Font sizes for menus and game over screens
+- Starfield: count, size, color, and twinkle speed
+- Hyperdrive: duration, star count, field of view, ship fly-in time
+- Propulsion trail: length, fade speed, color, width
+
+### Leaderboard
+- Maximum scores to keep (default: 10)
+- Maximum name length (default: 12 characters)
+
+### Menu System
+- Section padding and element spacing
+- Default font size for menu elements
+
+Modify these constants to adjust gameplay behavior and visual effects.
 
 ## Logging
 The game automatically generates two log files (gitignored by default):
