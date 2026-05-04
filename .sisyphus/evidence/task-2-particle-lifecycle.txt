@@ -1,0 +1,43 @@
+Task 2: ExhaustParticle class
+==============================
+Created: 2026-05-04
+Status: PASS
+
+Implementation:
+- Added `import random` at top of player.py (for Task 3 emission logic)
+- Added ExhaustParticle class BEFORE Player class in player.py at line 55
+
+Class methods:
+  __init__(self, position, velocity, lifetime, size, color)
+    - position: pygame.Vector2
+    - velocity: pygame.Vector2  
+    - lifetime: float (seconds)
+    - size: int (pixels)
+    - color: tuple RGB
+    - elapsed: float = 0.0
+    - max_lifetime: float = lifetime
+
+  update(self, dt)
+    - Updates position via velocity * dt
+    - Tracks elapsed time
+    - Returns True if expired (elapsed >= max_lifetime)
+
+  draw(self, screen)
+    - No-op if expired
+    - Computes alpha from remaining lifetime
+    - Creates temporary SRCALPHA surface for alpha blend
+    - Draws circle with alpha to temp surface
+    - Blits to screen at adjusted position
+
+  is_alive(self)
+    - Returns elapsed < max_lifetime
+
+Verification:
+  - AST parse confirms class with __init__, update, draw, is_alive
+  - Functional test passes: init state, update tracking, expiry detection,
+    velocity integration, draw no-crash, draw post-expiry no-op
+
+Dependencies:
+  - Requires `random` import (added)
+  - Requires TRAIL_* constants from constants.py (Task 1, not yet present)
+  - Class itself doesn't depend on TRAIL constants
