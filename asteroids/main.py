@@ -44,17 +44,26 @@ def init_game():
 
 def draw_game_over(screen, score, starfield, leaderboard=None):
     menu = Menu()
-    menu.add(MenuElement("GAME OVER", -60, GAME_OVER_TEXT_SIZE))
-    menu.add(MenuElement(f"Score: {score}", 0, GAME_OVER_SUBTEXT_SIZE))
-    menu.add(MenuElement("Press ENTER to restart", 60, GAME_OVER_RETRY_TEXT_SIZE))
-    menu.add(MenuElement("Press ESC for menu", 90, GAME_OVER_RETRY_TEXT_SIZE))
 
     if leaderboard:
         top_scores = leaderboard.get_top()
         if top_scores:
-            menu.add(MenuElement("HIGH SCORES", 140, LEADERBOARD_ENTRY_SIZE))
+            menu.add(MenuElement("HIGH SCORES", -80, LEADERBOARD_ENTRY_SIZE))
             for i, entry in enumerate(top_scores):
-                menu.add(MenuElement(f"{i + 1}. {entry['name']:<12} {entry['score']:>5}", 170 + i * 25, LEADERBOARD_ENTRY_SIZE))
+                y = -40 + i * 30
+                menu.add(MenuElement(f"{i + 1}.", y, LEADERBOARD_ENTRY_SIZE, x_offset=-140))
+                menu.add(MenuElement(entry['name'], y, LEADERBOARD_ENTRY_SIZE, x_offset=-110))
+                menu.add(MenuElement(str(entry['score']), y, LEADERBOARD_ENTRY_SIZE, x_offset=120))
+            menu.add(MenuElement("Press ENTER to restart", 220, GAME_OVER_RETRY_TEXT_SIZE))
+            menu.add(MenuElement("Press ESC for menu", 250, GAME_OVER_RETRY_TEXT_SIZE))
+        else:
+            menu.add(MenuElement("Press ENTER to restart", -40, GAME_OVER_RETRY_TEXT_SIZE))
+            menu.add(MenuElement("Press ESC for menu", 40, GAME_OVER_RETRY_TEXT_SIZE))
+    else:
+        menu.add(MenuElement("GAME OVER", -60, GAME_OVER_TEXT_SIZE))
+        menu.add(MenuElement(f"Score: {score}", 0, GAME_OVER_SUBTEXT_SIZE))
+        menu.add(MenuElement("Press ENTER to restart", 60, GAME_OVER_RETRY_TEXT_SIZE))
+        menu.add(MenuElement("Press ESC for menu", 90, GAME_OVER_RETRY_TEXT_SIZE))
 
     menu.draw(screen, starfield)
 
@@ -93,6 +102,7 @@ def check_collisions(asteroids, shots, player):
 
 
 def draw(screen, drawable, starfield):
+    screen.fill("black")
     starfield.draw(screen)
     for d in drawable:
         d.draw(screen)
@@ -134,7 +144,10 @@ def draw_start_menu(screen, leaderboard, starfield):
     if top_scores:
         menu.add(MenuElement("HIGH SCORES", -210, LEADERBOARD_ENTRY_SIZE))
         for i, entry in enumerate(top_scores):
-            menu.add(MenuElement(f"{i + 1}. {entry['name']:<12} {entry['score']:>5}", -170 + i * 30, LEADERBOARD_ENTRY_SIZE))
+            y = -170 + i * 30
+            menu.add(MenuElement(f"{i + 1}.", y, LEADERBOARD_ENTRY_SIZE, x_offset=-140))
+            menu.add(MenuElement(entry['name'], y, LEADERBOARD_ENTRY_SIZE, x_offset=-110))
+            menu.add(MenuElement(str(entry['score']), y, LEADERBOARD_ENTRY_SIZE, x_offset=120))
     else:
         menu.add(MenuElement("No scores yet", -140, LEADERBOARD_ENTRY_SIZE))
 
@@ -180,8 +193,12 @@ def main():
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     leaderboard = Leaderboard()
     starfield = StarField()
+    clock = pygame.time.Clock()
 
     while True:
+        dt = clock.tick(60) / 1000
+        starfield.update(dt)
+
         draw_start_menu(screen, leaderboard, starfield)
 
         waiting = True
@@ -207,6 +224,9 @@ def main():
 
         retry = False
         while not retry:
+            dt = clock.tick(60) / 1000
+            starfield.update(dt)
+
             draw_game_over(screen, score, starfield, leaderboard if show_leaderboard else None)
 
             event = poll_events()
