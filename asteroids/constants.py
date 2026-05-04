@@ -7,6 +7,10 @@ LINE_WIDTH = 2 # the width of the lines that draw the player's ship
 PLAYER_RADIUS = 20
 PLAYER_TURN_SPEED = 300
 PLAYER_SPEED = 200
+TRAIL_LENGTH = 20
+TRAIL_FADE_SPEED = 2.0
+TRAIL_COLOR = (255, 165, 0)
+TRAIL_WIDTH = 3
 
 # Gun settings
 SHOT_RADIUS = 5
