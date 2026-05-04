@@ -13,6 +13,12 @@ class MenuElement:
 class Menu:
     def __init__(self):
         self.elements = []
+        self._font_cache = {}
+
+    def _get_font(self, size):
+        if size not in self._font_cache:
+            self._font_cache[size] = pygame.font.SysFont(None, size)
+        return self._font_cache[size]
 
     def add(self, element: MenuElement):
         self.elements.append(element)
@@ -27,7 +33,7 @@ class Menu:
         screen.fill("black")
 
         for element in self.elements:
-            font = pygame.font.SysFont(None, element.font_size)
+            font = self._get_font(element.font_size)
             text_surface = font.render(element.text, True, element.color)
             rect = text_surface.get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + element.y_offset))
             screen.blit(text_surface, rect)

@@ -42,3 +42,8 @@ LEADERBOARD_MAX_SCORES = 10
 
 # Menu
 MENU_DEFAULT_FONT_SIZE = 30
+
+# Events
+EVENT_QUIT = "quit"
+EVENT_RETRY = "retry"
+EVENT_MENU = "menu"

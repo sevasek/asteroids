@@ -41,21 +41,30 @@ def init_game():
     return player
 
 
-def draw_game_over(screen, score):
+def draw_game_over(screen, score, leaderboard=None):
     menu = Menu()
     menu.add(MenuElement("GAME OVER", -60, GAME_OVER_TEXT_SIZE))
     menu.add(MenuElement(f"Score: {score}", 0, GAME_OVER_SUBTEXT_SIZE))
-    menu.add(MenuElement("Press ENTER to retry or ESC to quit", 50, GAME_OVER_RETRY_TEXT_SIZE))
+    menu.add(MenuElement("Press ENTER to restart", 60, GAME_OVER_RETRY_TEXT_SIZE))
+    menu.add(MenuElement("Press ESC for menu", 90, GAME_OVER_RETRY_TEXT_SIZE))
+
+    if leaderboard:
+        top_scores = leaderboard.get_top()
+        if top_scores:
+            menu.add(MenuElement("HIGH SCORES", 140, LEADERBOARD_ENTRY_SIZE))
+            for i, entry in enumerate(top_scores):
+                menu.add(MenuElement(f"{i + 1}. {entry['name']:<12} {entry['score']:>5}", 170 + i * 25, LEADERBOARD_ENTRY_SIZE))
+
     menu.draw(screen)
 
 
-def poll_events():
+def poll_events(menu_mode=False):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             return "quit"
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                return "quit"
+                return "menu" if menu_mode else "quit"
             if event.key == pygame.K_RETURN:
                 return "retry"
     return None
@@ -173,29 +182,34 @@ def main():
 
         waiting = True
         while waiting:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    return
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_RETURN:
-                        waiting = False
+            event = poll_events(menu_mode=True)
+            if event == "quit":
+                return
+            if event == "retry":
+                waiting = False
 
         result, score = run_game(screen)
         if result is False:
             return
 
+        show_leaderboard = False
         if leaderboard.is_high_score(score):
             name = get_player_name(screen, score)
+            if name is None:
+                return
             if name:
                 leaderboard.add_score(name, score)
+                show_leaderboard = True
 
         retry = False
         while not retry:
-            draw_game_over(screen, score)
+            draw_game_over(screen, score, leaderboard if show_leaderboard else None)
 
             event = poll_events()
             if event == "quit":
                 return
+            if event == "menu":
+                retry = True
             if event == "retry":
                 retry = True
 
