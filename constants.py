@@ -21,6 +21,21 @@ EXHAUST_PARTICLE_SPEED_MAX = 200     # px/s
 EXHAUST_COLORS = [(100, 149, 237), (0, 191, 255), (135, 206, 250)]  # blue ion range
 EXHAUST_INTENSITY_CAP = 2.0          # seconds to reach full intensity
 
+# Explosion particle effects
+EXPLOSION_PARTICLE_LIFETIME_MIN = 0.2  # seconds
+EXPLOSION_PARTICLE_LIFETIME_MAX = 0.5  # seconds
+EXPLOSION_PARTICLE_SPEED_MIN = 200     # px/s
+EXPLOSION_PARTICLE_SPEED_MAX = 400     # px/s
+EXPLOSION_PARTICLE_SIZE_MIN = 1        # pixels
+EXPLOSION_PARTICLE_SIZE_MAX = 3        # pixels
+# Explosion particle counts by asteroid size
+EXPLOSION_COUNT_LARGE_MIN = 20         # large asteroids (radius >= 40)
+EXPLOSION_COUNT_LARGE_MAX = 30
+EXPLOSION_COUNT_MEDIUM_MIN = 10        # medium asteroids (radius 20-39)
+EXPLOSION_COUNT_MEDIUM_MAX = 15
+EXPLOSION_COUNT_SMALL_MIN = 5          # small asteroids (radius < 20)
+EXPLOSION_COUNT_SMALL_MAX = 8
+
 # Gun settings
 SHOT_RADIUS = 5
 PLAYER_SHOOT_SPEED = 500
