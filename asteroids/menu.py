@@ -29,8 +29,11 @@ class Menu:
     def clear(self):
         self.elements.clear()
 
-    def draw(self, screen):
-        screen.fill("black")
+    def draw(self, screen, starfield=None):
+        if starfield:
+            starfield.draw(screen)
+        else:
+            screen.fill("black")
 
         for element in self.elements:
             font = self._get_font(element.font_size)
