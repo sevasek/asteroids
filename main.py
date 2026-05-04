@@ -1,4 +1,5 @@
 from __future__ import annotations
+import random
 import sys
 
 
@@ -15,6 +16,19 @@ _check_pygame()
 
 import pygame
 from constants import (
+    EXHAUST_COLORS,
+    EXPLOSION_COUNT_LARGE_MAX,
+    EXPLOSION_COUNT_LARGE_MIN,
+    EXPLOSION_COUNT_MEDIUM_MAX,
+    EXPLOSION_COUNT_MEDIUM_MIN,
+    EXPLOSION_COUNT_SMALL_MAX,
+    EXPLOSION_COUNT_SMALL_MIN,
+    EXPLOSION_PARTICLE_LIFETIME_MAX,
+    EXPLOSION_PARTICLE_LIFETIME_MIN,
+    EXPLOSION_PARTICLE_SIZE_MAX,
+    EXPLOSION_PARTICLE_SIZE_MIN,
+    EXPLOSION_PARTICLE_SPEED_MAX,
+    EXPLOSION_PARTICLE_SPEED_MIN,
     GAME_OVER_RETRY_TEXT_SIZE,
     GAME_OVER_SUBTEXT_SIZE,
     GAME_OVER_TEXT_SIZE,
@@ -93,7 +107,33 @@ def poll_events(menu_mode=False):
     return None
 
 
-def check_collisions(asteroids, shots, player):
+def get_explosion_particle_count(radius):
+    if radius >= 40:
+        return random.randint(EXPLOSION_COUNT_LARGE_MIN, EXPLOSION_COUNT_LARGE_MAX)
+    elif radius >= 20:
+        return random.randint(EXPLOSION_COUNT_MEDIUM_MIN, EXPLOSION_COUNT_MEDIUM_MAX)
+    else:
+        return random.randint(EXPLOSION_COUNT_SMALL_MIN, EXPLOSION_COUNT_SMALL_MAX)
+
+
+def spawn_explosion(position, radius, explosion_particles):
+    from player import ExhaustParticle
+
+    particle_count = get_explosion_particle_count(radius)
+
+    for _ in range(particle_count):
+        angle = random.uniform(0, 360)
+        direction = pygame.Vector2(0, 1).rotate(angle)
+        speed = random.uniform(EXPLOSION_PARTICLE_SPEED_MIN, EXPLOSION_PARTICLE_SPEED_MAX)
+        velocity = direction * speed
+        lifetime = random.uniform(EXPLOSION_PARTICLE_LIFETIME_MIN, EXPLOSION_PARTICLE_LIFETIME_MAX)
+        size = random.randint(EXPLOSION_PARTICLE_SIZE_MIN, EXPLOSION_PARTICLE_SIZE_MAX)
+        color = random.choice(EXHAUST_COLORS)
+        particle = ExhaustParticle(position.copy(), velocity, lifetime, size, color)
+        explosion_particles.append(particle)
+
+
+def check_collisions(asteroids, shots, player, explosion_particles):
     player_hit = False
     score_delta = 0
 
@@ -106,6 +146,7 @@ def check_collisions(asteroids, shots, player):
         for s in shots.copy():
             if a.collides_with(s):
                 log_event("asteroid_shot")
+                spawn_explosion(a.position.copy(), a.radius, explosion_particles)
                 a.split()
                 s.kill()
                 score_delta += 10
@@ -114,9 +155,12 @@ def check_collisions(asteroids, shots, player):
     return player_hit, score_delta
 
 
-def draw(screen, drawable, starfield):
+def draw(screen, drawable, starfield, explosion_particles):
     screen.fill("black")
     starfield.draw(screen)
+    for particle in explosion_particles:
+        if particle.is_alive():
+            particle.draw(screen)
     for d in drawable:
         d.draw(screen)
     pygame.display.flip()
@@ -136,9 +180,11 @@ def run_game(screen, starfield, run_hyperdrive=True):
 
     reset_logger()
     updatable, drawable, asteroids, shots = create_groups()
+    explosion_particles = []
     player = init_game()
     clock = pygame.time.Clock()
     score = 0
+    survival_elapsed = 0
 
     while True:
         dt = min(clock.tick(60) / 1000, MAX_DELTA_TIME)
@@ -152,12 +198,20 @@ def run_game(screen, starfield, run_hyperdrive=True):
 
         updatable.update(dt)
 
-        player_hit, delta = check_collisions(asteroids, shots, player)
+        explosion_particles = [p for p in explosion_particles if not p.update(dt)]
+
+        player_hit, delta = check_collisions(asteroids, shots, player, explosion_particles)
         score += delta
+
+        survival_elapsed += dt
+        if survival_elapsed >= 1:
+            score += 1
+            survival_elapsed -= 1
+
         if player_hit:
             return True, score
 
-        draw(screen, drawable, starfield)
+        draw(screen, drawable, starfield, explosion_particles)
 
 
 def draw_start_menu(screen, leaderboard, starfield):
