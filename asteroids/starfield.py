@@ -18,12 +18,19 @@ class StarField:
     def __init__(self):
         self.stars = [Star() for _ in range(STAR_COUNT)]
         self.time_elapsed = 0
+        self._star_surface = None
+
+    def _get_surface(self):
+        if self._star_surface is None:
+            self._star_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        return self._star_surface
 
     def update(self, dt):
         self.time_elapsed += dt
 
     def draw(self, screen):
-        star_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        star_surface = self._get_surface()
+        star_surface.fill((0, 0, 0, 0))
 
         for star in self.stars:
             brightness = (math.sin(self.time_elapsed * STAR_TWINKLE_SPEED + star.phase_offset) + 1) / 2

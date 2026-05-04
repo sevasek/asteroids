@@ -13,6 +13,7 @@ from constants import (
     SCREEN_WIDTH,
 )
 from asteroids import Asteroid
+from hyperdrive import Hyperdrive
 from leaderboard import Leaderboard
 from logger import log_state, log_event, reset_logger
 from menu import Menu, MenuElement
@@ -107,7 +108,18 @@ def draw(screen, drawable, starfield):
     pygame.display.flip()
 
 
-def run_game(screen, starfield):
+def run_game(screen, starfield, run_hyperdrive=True):
+    if run_hyperdrive:
+        screen.fill("black")
+        pygame.display.flip()
+        clock = pygame.time.Clock()
+        hyperdrive = Hyperdrive()
+        while not hyperdrive.is_complete():
+            dt = min(clock.tick(60) / 1000, MAX_DELTA_TIME)
+            hyperdrive.update(dt)
+            hyperdrive.draw(screen)
+            pygame.display.flip()
+
     reset_logger()
     updatable, drawable, asteroids, shots = create_groups()
     player = init_game()
