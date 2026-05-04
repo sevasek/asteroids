@@ -53,6 +53,16 @@ A fully functional clone of the classic 1979 Asteroids arcade game, featuring au
    pip install -e .
    ```
 
+### Troubleshooting
+
+**macOS: `ModuleNotFoundError: pygame.font`**
+If you get an error about `pygame.font` not being available, you need to install SDL2_ttf before installing pygame:
+```bash
+brew install sdl2_ttf
+pip install pygame
+```
+Then run the game again.
+
 ### Running the Game
 ```bash
 # With uv

@@ -1,4 +1,18 @@
 from __future__ import annotations
+import sys
+
+
+def _check_pygame():
+    try:
+        import pygame.font
+    except ImportError:
+        print("ERROR: pygame.font module not available")
+        print("On macOS: brew install sdl2_ttf && pip install pygame")
+        sys.exit(1)
+
+
+_check_pygame()
+
 import pygame
 from constants import (
     GAME_OVER_RETRY_TEXT_SIZE,
