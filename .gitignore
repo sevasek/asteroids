@@ -1,2 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.egg-info/
+
+# Game data
 game_state.jsonl
 game_events.jsonl
+leaderboard.json
+
+# IDE
+.vscode/
+.idea/
+
+# System
+.DS_Store
+
+# Python version
+.python-version
