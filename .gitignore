@@ -21,3 +21,7 @@ leaderboard.json
 
 # Python version
 .python-version
+
+# Test artifacts
+test_leaderboard.json
+.venv/
