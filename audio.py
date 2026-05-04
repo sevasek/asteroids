@@ -43,16 +43,11 @@ class HitSound:
         t = np.linspace(0, self.duration, num_samples, False)
         composite = np.zeros(num_samples)
 
-        for freq, amp, env_type in self.tones:
+        for freq, amp, env_type in self._build_tones():
             wave = np.sin(2 * np.pi * freq * t)
 
             if env_type == "decay":
                 envelope = np.exp(-t * AUDIO_DECAY_RATE)
-            elif env_type == "sustain":
-                envelope = np.ones_like(t)
-                fade_start = int(len(t) * AUDIO_SUSTAIN_FADE_START)
-                if fade_start < len(t):
-                    envelope[fade_start:] = np.linspace(1, 0, len(t) - fade_start)
 
             composite += wave * envelope * amp
 
