@@ -64,7 +64,7 @@ class Menu:
         self.middle.clear()
         self.bottom.clear()
 
-    def draw(self, screen, starfield=None):
+    def draw(self, screen, starfield=None, middle_pairs=False):
         screen.fill("black")
         if starfield:
             starfield.draw(screen)
@@ -84,7 +84,10 @@ class Menu:
         y += top_height + MENU_SECTION_PADDING
 
         y = middle_start_y
-        self._draw_section_pairs(screen, self.middle, y, font_getter)
+        if middle_pairs:
+            self._draw_section_pairs(screen, self.middle, y, font_getter)
+        else:
+            self._draw_section(screen, self.middle, y, font_getter)
         y += middle_height + MENU_SECTION_PADDING
 
         y = SCREEN_HEIGHT - MENU_SECTION_PADDING - bottom_height

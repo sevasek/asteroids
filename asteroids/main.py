@@ -63,7 +63,7 @@ def draw_game_over(screen, score, starfield, leaderboard=None):
 
     menu.add_to_bottom(MenuElement("Press ENTER to restart", font_size=GAME_OVER_RETRY_TEXT_SIZE))
     menu.add_to_bottom(MenuElement("Press ESC for menu", font_size=GAME_OVER_RETRY_TEXT_SIZE))
-    menu.draw(screen, starfield)
+    menu.draw(screen, starfield, middle_pairs=True if leaderboard else False)
 
 
 def poll_events(menu_mode=False):
@@ -148,7 +148,7 @@ def draw_start_menu(screen, leaderboard, starfield):
         menu.add_to_middle(MenuElement("No scores yet", font_size=LEADERBOARD_ENTRY_SIZE))
 
     menu.add_to_bottom(MenuElement("Press ENTER to start", font_size=LEADERBOARD_PROMPT_SIZE))
-    menu.draw(screen, starfield)
+    menu.draw(screen, starfield, middle_pairs=True)
 
 
 def draw_name_entry(screen, score, starfield, name=""):
@@ -218,6 +218,7 @@ def main():
                 leaderboard.add_score(name, score)
                 show_leaderboard = True
 
+        go_to_start = False
         retry = False
         while not retry:
             dt = clock.tick(60) / 1000
@@ -230,8 +231,24 @@ def main():
                 return
             if event == "menu":
                 retry = True
+                go_to_start = True
             if event == "retry":
                 retry = True
+                go_to_start = False
+
+        if not go_to_start:
+            result, score = run_game(screen, starfield)
+            if result is False:
+                return
+
+            show_leaderboard = False
+            if leaderboard.is_high_score(score):
+                name = get_player_name(screen, score, starfield)
+                if name is None:
+                    return
+                if name:
+                    leaderboard.add_score(name, score)
+                    show_leaderboard = True
 
 
 if __name__ == "__main__":
