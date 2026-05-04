@@ -12,7 +12,7 @@ from constants import (
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
 )
-from asteroids import Asteroid
+from asteroid import Asteroid
 from hyperdrive import Hyperdrive
 from leaderboard import Leaderboard
 from logger import log_state, log_event, reset_logger

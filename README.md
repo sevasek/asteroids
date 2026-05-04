@@ -44,19 +44,16 @@ A fully functional clone of the classic 1979 Asteroids arcade game, featuring au
 
 2. Install dependencies using uv (recommended):
    ```bash
-   cd asteroids
    uv sync
    ```
    Or using pip:
    ```bash
-   cd asteroids
    python -m venv .venv
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    pip install -e .
    ```
 
 ### Running the Game
-Launch the game from the `asteroids` subdirectory:
 ```bash
 # With uv
 uv run python main.py
@@ -93,26 +90,25 @@ python main.py
 asteroids/                  # Repository root
 ├── README.md               # This file
 ├── .gitignore              # Ignored files (game logs, venv)
-└── asteroids/              # Game package
-    ├── main.py             # Entry point, game loop, event handling
-    ├── player.py           # Player ship logic and controls
-    ├── asteroids.py        # Asteroid class, splitting behavior
-    ├── asteroidfield.py    # Asteroid spawning logic
-    ├── shot.py             # Projectile logic and rendering
-    ├── circleshape.py      # Base class for circular game objects
-    ├── constants.py        # Game configuration and tunable settings
-    ├── logger.py           # JSONL game state and event logging
-    ├── hyperdrive.py       # Star Wars-style warp tunnel intro
-    ├── starfield.py        # Twinkling star background
-    ├── menu.py             # Dynamic menu system with auto-layout
-    ├── leaderboard.py      # Persistent high score leaderboard
-    ├── pyproject.toml      # Project metadata and dependencies
-    ├── uv.lock             # Dependency lock file
-    └── .venv/              # Virtual environment (gitignored)
+├── main.py                 # Entry point, game loop, event handling
+├── player.py               # Player ship logic and controls
+├── asteroid.py             # Asteroid class, splitting behavior
+├── asteroidfield.py        # Asteroid spawning logic
+├── shot.py                 # Projectile logic and rendering
+├── circleshape.py           # Base class for circular game objects
+├── constants.py             # Game configuration and tunable settings
+├── logger.py                # JSONL game state and event logging
+├── hyperdrive.py            # Star Wars-style warp tunnel intro
+├── starfield.py             # Twinkling star background
+├── menu.py                  # Dynamic menu system with auto-layout
+├── leaderboard.py           # Persistent high score leaderboard
+├── pyproject.toml          # Project metadata and dependencies
+├── uv.lock                 # Dependency lock file
+└── .python-version         # Python version specification
 ```
 
 ## Configuration
-All tunable game settings are defined in `asteroids/constants.py`, including:
+All tunable game settings are defined in `constants.py`, including:
 
 ### Core Settings
 - Screen dimensions (default: 1280x720)
@@ -138,7 +134,7 @@ Modify these constants to adjust gameplay behavior and visual effects.
 
 ## Logging
 The game automatically generates two log files (gitignored by default):
-- `asteroids/game_state.jsonl`: Periodic snapshots of game state (player position, asteroids, shots) every second for up to 16 seconds per session
-- `asteroids/game_events.jsonl`: Event logs for asteroid destruction, splits, and player hits
+- `game_state.jsonl`: Periodic snapshots of game state (player position, asteroids, shots) every second for up to 16 seconds per session
+- `game_events.jsonl`: Event logs for asteroid destruction, splits, and player hits
 
 These files are excluded from version control via `.gitignore`.

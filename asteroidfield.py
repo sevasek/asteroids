@@ -1,6 +1,6 @@
 import pygame
 import random
-from asteroids import Asteroid
+from asteroid import Asteroid
 from constants import (
     ASTEROID_KINDS,
     ASTEROID_MAX_RADIUS,
