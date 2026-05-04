@@ -127,7 +127,7 @@ def run_game(screen, starfield, run_hyperdrive=True):
         screen.fill("black")
         pygame.display.flip()
         clock = pygame.time.Clock()
-        hyperdrive = Hyperdrive()
+        hyperdrive = Hyperdrive(starfield)
         while not hyperdrive.is_complete():
             dt = min(clock.tick(60) / 1000, MAX_DELTA_TIME)
             hyperdrive.update(dt)
