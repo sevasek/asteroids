@@ -5,6 +5,7 @@ from constants import (
     GAME_OVER_SUBTEXT_SIZE,
     GAME_OVER_TEXT_SIZE,
     LEADERBOARD_ENTRY_SIZE,
+    LEADERBOARD_MAX_NAME_LENGTH,
     LEADERBOARD_PROMPT_SIZE,
     LEADERBOARD_TITLE_SIZE,
     MAX_DELTA_TIME,
@@ -14,6 +15,7 @@ from constants import (
 from asteroids import Asteroid
 from leaderboard import Leaderboard
 from logger import log_state, log_event, reset_logger
+from menu import Menu, MenuElement
 from player import Player
 from asteroidfield import AsteroidField
 from shot import Shot
@@ -40,17 +42,11 @@ def init_game():
 
 
 def draw_game_over(screen, score):
-    font_large = pygame.font.SysFont(None, GAME_OVER_TEXT_SIZE)
-    font_medium = pygame.font.SysFont(None, GAME_OVER_SUBTEXT_SIZE)
-    font_small = pygame.font.SysFont(None, GAME_OVER_RETRY_TEXT_SIZE)
-
-    game_over_text = font_large.render("GAME OVER", True, "white")
-    score_text = font_medium.render(f"Score: {score}", True, "white")
-    retry_text = font_small.render("Press ENTER to retry or ESC to quit", True, "white")
-
-    screen.blit(game_over_text, game_over_text.get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 60)))
-    screen.blit(score_text, score_text.get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)))
-    screen.blit(retry_text, retry_text.get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 50)))
+    menu = Menu()
+    menu.add(MenuElement("GAME OVER", -60, GAME_OVER_TEXT_SIZE))
+    menu.add(MenuElement(f"Score: {score}", 0, GAME_OVER_SUBTEXT_SIZE))
+    menu.add(MenuElement("Press ENTER to retry or ESC to quit", 50, GAME_OVER_RETRY_TEXT_SIZE))
+    menu.draw(screen)
 
 
 def poll_events():
@@ -119,49 +115,28 @@ def run_game(screen):
 
 
 def draw_start_menu(screen, leaderboard):
-    screen.fill("black")
-
-    font_title = pygame.font.SysFont(None, LEADERBOARD_TITLE_SIZE)
-    font_entry = pygame.font.SysFont(None, LEADERBOARD_ENTRY_SIZE)
-    font_prompt = pygame.font.SysFont(None, LEADERBOARD_PROMPT_SIZE)
-
-    title_text = font_title.render("ASTEROIDS", True, "white")
-    screen.blit(title_text, title_text.get_rect(center=(SCREEN_WIDTH / 2, 80)))
+    menu = Menu()
+    menu.add(MenuElement("ASTEROIDS", -280, LEADERBOARD_TITLE_SIZE))
 
     top_scores = leaderboard.get_top()
     if top_scores:
-        header_text = font_entry.render("HIGH SCORES", True, "white")
-        screen.blit(header_text, header_text.get_rect(center=(SCREEN_WIDTH / 2, 150)))
-
+        menu.add(MenuElement("HIGH SCORES", -210, LEADERBOARD_ENTRY_SIZE))
         for i, entry in enumerate(top_scores):
-            score_text = font_entry.render(f"{i + 1}. {entry['name']:<12} {entry['score']:>5}", True, "white")
-            screen.blit(score_text, score_text.get_rect(center=(SCREEN_WIDTH / 2, 190 + i * 30)))
+            menu.add(MenuElement(f"{i + 1}. {entry['name']:<12} {entry['score']:>5}", -170 + i * 30, LEADERBOARD_ENTRY_SIZE))
     else:
-        no_scores_text = font_entry.render("No scores yet", True, "white")
-        screen.blit(no_scores_text, no_scores_text.get_rect(center=(SCREEN_WIDTH / 2, 200)))
+        menu.add(MenuElement("No scores yet", -140, LEADERBOARD_ENTRY_SIZE))
 
-    prompt_text = font_prompt.render("Press ENTER to start", True, "white")
-    screen.blit(prompt_text, prompt_text.get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT - 80)))
-
-    pygame.display.flip()
+    menu.add(MenuElement("Press ENTER to start", 280, LEADERBOARD_PROMPT_SIZE))
+    menu.draw(screen)
 
 
-def draw_name_entry(screen, score):
-    screen.fill("black")
-
-    font_title = pygame.font.SysFont(None, GAME_OVER_TEXT_SIZE)
-    font_prompt = pygame.font.SysFont(None, GAME_OVER_SUBTEXT_SIZE)
-    font_input = pygame.font.SysFont(None, GAME_OVER_SUBTEXT_SIZE)
-
-    title_text = font_title.render("NEW HIGH SCORE!", True, "white")
-    score_text = font_prompt.render(f"Score: {score}", True, "white")
-    prompt_text = font_prompt.render("Enter your name (12 chars):", True, "white")
-
-    screen.blit(title_text, title_text.get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 80)))
-    screen.blit(score_text, score_text.get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 20)))
-    screen.blit(prompt_text, prompt_text.get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 30)))
-
-    pygame.display.flip()
+def draw_name_entry(screen, score, name=""):
+    menu = Menu()
+    menu.add(MenuElement("NEW HIGH SCORE!", -80, GAME_OVER_TEXT_SIZE))
+    menu.add(MenuElement(f"Score: {score}", -20, GAME_OVER_SUBTEXT_SIZE))
+    menu.add(MenuElement("Enter your name:", 30, GAME_OVER_SUBTEXT_SIZE))
+    menu.add(MenuElement(name + "_", 70, GAME_OVER_SUBTEXT_SIZE))
+    menu.draw(screen)
 
 
 def get_player_name(screen, score):
@@ -169,14 +144,7 @@ def get_player_name(screen, score):
     drawing = True
 
     while drawing:
-        draw_name_entry(screen, score)
-
-        font_input = pygame.font.SysFont(None, GAME_OVER_SUBTEXT_SIZE)
-        name_text = font_input.render(name + "_", True, "white")
-        name_rect = name_text.get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 70))
-
-        screen.blit(name_text, name_rect)
-        pygame.display.flip()
+        draw_name_entry(screen, score, name)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -188,7 +156,7 @@ def get_player_name(screen, score):
                     drawing = False
                 elif event.key == pygame.K_BACKSPACE:
                     name = name[:-1]
-                elif len(name) < 12:
+                elif len(name) < LEADERBOARD_MAX_NAME_LENGTH:
                     if event.unicode.isalnum():
                         name += event.unicode.upper()
 
@@ -224,7 +192,6 @@ def main():
         retry = False
         while not retry:
             draw_game_over(screen, score)
-            pygame.display.flip()
 
             event = poll_events()
             if event == "quit":
