@@ -15,7 +15,10 @@ def _check_pygame():
 _check_pygame()
 
 import pygame
+from audio import ComboTracker, HitSound
 from constants import (
+    AUDIO_COMBO_TIMEOUT,
+    AUDIO_SAMPLE_RATE,
     EXHAUST_COLORS,
     EXPLOSION_COUNT_LARGE_MAX,
     EXPLOSION_COUNT_LARGE_MIN,
@@ -133,7 +136,7 @@ def spawn_explosion(position, radius, explosion_particles):
         explosion_particles.append(particle)
 
 
-def check_collisions(asteroids, shots, player, explosion_particles):
+def check_collisions(asteroids, shots, player, explosion_particles, combo_tracker, audio_enabled):
     player_hit = False
     score_delta = 0
 
@@ -147,6 +150,11 @@ def check_collisions(asteroids, shots, player, explosion_particles):
             if a.collides_with(s):
                 log_event("asteroid_shot")
                 spawn_explosion(a.position.copy(), a.radius, explosion_particles)
+                # Play combo sound
+                if audio_enabled:
+                    combo_pos, root_freq = combo_tracker.on_hit(pygame.time.get_ticks() / 1000.0)
+                    hit_sound = HitSound(combo_pos, root_freq)
+                    hit_sound.play()
                 a.split()
                 s.kill()
                 score_delta += 10
@@ -179,6 +187,18 @@ def run_game(screen, starfield, run_hyperdrive=True):
             pygame.display.flip()
 
     reset_logger()
+
+    # Initialize audio
+    try:
+        pygame.mixer.init(frequency=AUDIO_SAMPLE_RATE, size=-16, channels=2, buffer=512)
+        audio_enabled = True
+    except Exception as e:
+        print(f"Audio initialization failed: {e}")
+        audio_enabled = False
+
+    # Create combo tracker
+    combo_tracker = ComboTracker(timeout=AUDIO_COMBO_TIMEOUT)
+
     updatable, drawable, asteroids, shots = create_groups()
     explosion_particles = []
     player = init_game()
@@ -200,7 +220,7 @@ def run_game(screen, starfield, run_hyperdrive=True):
 
         explosion_particles = [p for p in explosion_particles if not p.update(dt)]
 
-        player_hit, delta = check_collisions(asteroids, shots, player, explosion_particles)
+        player_hit, delta = check_collisions(asteroids, shots, player, explosion_particles, combo_tracker, audio_enabled)
         score += delta
 
         survival_elapsed += dt

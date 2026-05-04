@@ -21,6 +21,12 @@ EXHAUST_PARTICLE_SPEED_MAX = 200     # px/s
 EXHAUST_COLORS = [(100, 149, 237), (0, 191, 255), (135, 206, 250)]  # blue ion range
 EXHAUST_INTENSITY_CAP = 2.0          # seconds to reach full intensity
 
+# Audio settings
+AUDIO_SAMPLE_RATE = 44100
+AUDIO_COMBO_TIMEOUT = 0.5  # seconds between hits to maintain combo
+# A minor pentatonic scale frequencies (Hz)
+AUDIO_SCALE_A_MINOR_PENTATONIC = [440.0, 523.25, 587.33, 659.25, 783.99]
+
 # Explosion particle effects
 EXPLOSION_PARTICLE_LIFETIME_MIN = 0.2  # seconds
 EXPLOSION_PARTICLE_LIFETIME_MAX = 0.5  # seconds
