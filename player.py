@@ -1,5 +1,8 @@
+import math
+import random
+
 import pygame
-from constants import PLAYER_RADIUS, LINE_WIDTH, PLAYER_SHOOT_COOLDOWN_SECONDS, PLAYER_SPEED, PLAYER_TURN_SPEED, PLAYER_SHOOT_SPEED, TRAIL_LENGTH, TRAIL_FADE_SPEED, TRAIL_COLOR, TRAIL_WIDTH, SCREEN_WIDTH, SCREEN_HEIGHT
+from constants import PLAYER_RADIUS, LINE_WIDTH, PLAYER_SHOOT_COOLDOWN_SECONDS, PLAYER_SPEED, PLAYER_TURN_SPEED, PLAYER_SHOOT_SPEED, EXHAUST_PARTICLE_LIFETIME_MIN, EXHAUST_PARTICLE_LIFETIME_MAX, EXHAUST_PARTICLE_SIZE_MIN, EXHAUST_PARTICLE_SIZE_MAX, EXHAUST_SPREAD_ANGLE, EXHAUST_EMISSION_RATE_MIN, EXHAUST_EMISSION_RATE_MAX, EXHAUST_MAX_PARTICLES, EXHAUST_PARTICLE_SPEED_MIN, EXHAUST_PARTICLE_SPEED_MAX, EXHAUST_COLORS, EXHAUST_INTENSITY_CAP
 from circleshape import CircleShape
 from shot import Shot
 
@@ -50,13 +53,43 @@ def triangle_circle_collision(tri, circle_center, circle_radius):
     return False
 
 
+class ExhaustParticle:
+    def __init__(self, position, velocity, lifetime, size, color):
+        self.position = position  # pygame.Vector2
+        self.velocity = velocity  # pygame.Vector2
+        self.lifetime = lifetime  # float seconds
+        self.size = size  # int pixels
+        self.color = color  # tuple RGB
+        self.elapsed = 0.0
+        self.max_lifetime = lifetime
+
+    def update(self, dt):
+        self.position += self.velocity * dt
+        self.elapsed += dt
+        return self.elapsed >= self.max_lifetime  # Returns True if expired
+
+    def draw(self, screen):
+        if self.elapsed >= self.max_lifetime:
+            return
+        alpha = int(255 * (1 - self.elapsed / self.max_lifetime))
+        color_with_alpha = (*self.color, alpha)
+        # Draw on a temporary SRCALPHA surface and blit to screen
+        surf = pygame.Surface((int(self.size * 2 + 2), int(self.size * 2 + 2)), pygame.SRCALPHA)
+        pygame.draw.circle(surf, color_with_alpha, (int(self.size + 1), int(self.size + 1)), self.size)
+        screen.blit(surf, (int(self.position.x - self.size - 1), int(self.position.y - self.size - 1)))
+
+    def is_alive(self):
+        return self.elapsed < self.max_lifetime
+
+
 # Class for player object
 class Player(CircleShape):
     def __init__(self, x, y):
         super().__init__(x, y, PLAYER_RADIUS)
         self.rotation = 0
         self.shot_cooldown = 0
-        self.trail = []
+        self.exhaust_particles = []  # list of active ExhaustParticle instances
+        self.thrust_time = 0.0      # tracks continuous thrust duration
 
     # Transform the player's position and rotation into a triangle shape for drawing
     def triangle(self):
@@ -66,24 +99,62 @@ class Player(CircleShape):
         b = self.position - forward * self.radius - right
         c = self.position - forward * self.radius + right
         return [a, b, c]
-    
+
+    def get_exhaust_nozzle_position(self):
+        """Compute the engine nozzle position at the back of the ship triangle."""
+        forward = pygame.Vector2(0, 1).rotate(self.rotation)
+        nozzle = self.position - forward * self.radius
+        return nozzle
+
+    def emit_exhaust(self, dt):
+        """Emit exhaust particles when thrusting."""
+        # Calculate intensity based on thrust duration
+        intensity = min(self.thrust_time / EXHAUST_INTENSITY_CAP, 1.0)
+
+        # Calculate particles to emit this frame
+        rate = int(EXHAUST_EMISSION_RATE_MIN + intensity * (EXHAUST_EMISSION_RATE_MAX - EXHAUST_EMISSION_RATE_MIN))
+
+        # Get emission parameters
+        nozzle = self.get_exhaust_nozzle_position()
+        forward = pygame.Vector2(0, 1).rotate(self.rotation)
+        backward = -forward
+
+        for _ in range(rate):
+            # Random angular spread (convert degrees to radians)
+            spread_rad = math.radians(random.uniform(-EXHAUST_SPREAD_ANGLE, EXHAUST_SPREAD_ANGLE))
+
+            # Compute velocity direction with spread
+            vel_dir = backward.rotate(math.degrees(spread_rad)) if spread_rad != 0 else backward
+            speed = random.uniform(EXHAUST_PARTICLE_SPEED_MIN, EXHAUST_PARTICLE_SPEED_MAX)
+            velocity = vel_dir * speed
+
+            # Random lifetime, size, color
+            lifetime = random.uniform(EXHAUST_PARTICLE_LIFETIME_MIN, EXHAUST_PARTICLE_LIFETIME_MAX)
+            size = random.randint(EXHAUST_PARTICLE_SIZE_MIN, EXHAUST_PARTICLE_SIZE_MAX)
+            color = random.choice(EXHAUST_COLORS)
+
+            # Create and add particle
+            particle = ExhaustParticle(nozzle.copy(), velocity, lifetime, size, color)
+            self.exhaust_particles.append(particle)
+
+        # Enforce max particle cap - remove oldest
+        while len(self.exhaust_particles) > EXHAUST_MAX_PARTICLES:
+            self.exhaust_particles.pop()
+
     # Draw the player as a triangle
     def draw(self, screen):
-        if self.trail:
-            trail_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-            for i, pos in enumerate(self.trail):
-                alpha = int(255 * (1 - i / len(self.trail)))
-                if alpha > 0:
-                    color = (*TRAIL_COLOR, alpha)
-                    pygame.draw.circle(trail_surface, color, (int(pos.x), int(pos.y)), TRAIL_WIDTH)
-            screen.blit(trail_surface, (0, 0))
+        # Draw exhaust particles BEFORE ship polygon (behind ship visually)
+        if self.exhaust_particles:
+            for particle in self.exhaust_particles:
+                if particle.is_alive():
+                    particle.draw(screen)
 
         pygame.draw.polygon(screen, "white", self.triangle(), LINE_WIDTH)
 
     # Rotate the player by a certain amount of degrees
     def rotate(self, dt):
         self.rotation += PLAYER_TURN_SPEED * dt
-    
+
     # Update the player's state using the keyboard input
     def update(self, dt):
         keys = pygame.key.get_pressed()
@@ -101,7 +172,12 @@ class Player(CircleShape):
                 self.shoot()
                 self.shot_cooldown = PLAYER_SHOOT_COOLDOWN_SECONDS
         self.shot_cooldown -= dt
-                
+
+        if not keys[pygame.K_w]:
+            self.thrust_time = 0.0
+
+        self.exhaust_particles = [p for p in self.exhaust_particles if not p.update(dt)]
+
     # Move the player by its velocity
     def move(self, dt):
         unit_vector = pygame.Vector2(0, 1)
@@ -111,9 +187,8 @@ class Player(CircleShape):
         self.wrap_position()
 
         if dt > 0:
-            self.trail.insert(0, self.position.copy())
-            if len(self.trail) > TRAIL_LENGTH:
-                self.trail.pop()
+            self.thrust_time += dt
+            self.emit_exhaust(dt)
 
     def collides_with(self, other):
         return triangle_circle_collision(self.triangle(), other.position, other.radius)

@@ -7,10 +7,19 @@ LINE_WIDTH = 2 # the width of the lines that draw the player's ship
 PLAYER_RADIUS = 20
 PLAYER_TURN_SPEED = 300
 PLAYER_SPEED = 200
-TRAIL_LENGTH = 20
-TRAIL_FADE_SPEED = 2.0
-TRAIL_COLOR = (255, 165, 0)
-TRAIL_WIDTH = 3
+# Exhaust particle system
+EXHAUST_PARTICLE_LIFETIME_MIN = 0.3  # seconds
+EXHAUST_PARTICLE_LIFETIME_MAX = 0.8  # seconds
+EXHAUST_PARTICLE_SIZE_MIN = 1        # pixels
+EXHAUST_PARTICLE_SIZE_MAX = 4        # pixels
+EXHAUST_SPREAD_ANGLE = 30            # degrees from backward vector
+EXHAUST_EMISSION_RATE_MIN = 2        # particles per frame (low thrust)
+EXHAUST_EMISSION_RATE_MAX = 5        # particles per frame (full thrust)
+EXHAUST_MAX_PARTICLES = 150          # hard cap on simultaneous particles
+EXHAUST_PARTICLE_SPEED_MIN = 80      # px/s
+EXHAUST_PARTICLE_SPEED_MAX = 200     # px/s
+EXHAUST_COLORS = [(100, 149, 237), (0, 191, 255), (135, 206, 250)]  # blue ion range
+EXHAUST_INTENSITY_CAP = 2.0          # seconds to reach full intensity
 
 # Gun settings
 SHOT_RADIUS = 5
