@@ -1,15 +1,37 @@
 import numpy as np
 import pygame
 from pygame import sndarray
+from constants import (
+    AUDIO_COMBO_TIMEOUT,
+    AUDIO_SCALE_A_MINOR_PENTATONIC,
+    AUDIO_COMBO_DURATIONS,
+    AUDIO_CHORD_MINOR_THIRD,
+    AUDIO_CHORD_FIFTH,
+    AUDIO_CHORD_OCTAVE_DOWN,
+    AUDIO_CHORD_OCTAVE_UP,
+    AUDIO_DECAY_RATE,
+    AUDIO_STACCATO_RATE,
+    AUDIO_SUSTAIN_FADE_START,
+    AUDIO_AMP_ROOT_PRIMARY,
+    AUDIO_AMP_ROOT_SECONDARY,
+    AUDIO_AMP_ROOT_CHORD,
+    AUDIO_AMP_ROOT_FULL,
+    AUDIO_AMP_THIRD,
+    AUDIO_AMP_FIFTH,
+    AUDIO_AMP_THIRD_LIGHT,
+    AUDIO_AMP_FIFTH_LIGHT,
+    AUDIO_AMP_BASS,
+    AUDIO_AMP_BASS_LIGHT,
+    AUDIO_AMP_HIGH_STACCATO,
+)
 
 
 class ComboTracker:
-    def __init__(self, timeout=0.5):
+    def __init__(self, timeout=None):
         self.last_hit_time = 0
-        self.combo_position = 0  # 0-6 (represents stages 1-7)
-        self.timeout = timeout
-        # A minor pentatonic: A4, C5, D5, E5, G5
-        self.scale = [440.0, 523.25, 587.33, 659.25, 783.99]
+        self.combo_position = 0
+        self.timeout = timeout if timeout is not None else AUDIO_COMBO_TIMEOUT
+        self.scale = AUDIO_SCALE_A_MINOR_PENTATONIC
 
     def on_hit(self, current_time):
         if current_time - self.last_hit_time > self.timeout:
@@ -30,42 +52,41 @@ class HitSound:
         self.tones = self._build_tones()
 
     def _get_duration(self):
-        durations = [0.1, 0.2, 2.0, 2.0, 0.3, 0.3, 0.3]
-        return durations[self.position]
+        return AUDIO_COMBO_DURATIONS[self.position]
 
     def _build_tones(self):
         if self.position == 0:
-            tones = [(self.root, 0.8, "decay")]
+            tones = [(self.root, AUDIO_AMP_ROOT_PRIMARY, "decay")]
         elif self.position == 1:
-            tones = [(self.root, 0.8, "decay")]
+            tones = [(self.root, AUDIO_AMP_ROOT_PRIMARY, "decay")]
         elif self.position == 2:
-            tones = [(self.root, 0.7, "sustain")]
+            tones = [(self.root, AUDIO_AMP_ROOT_SECONDARY, "sustain")]
         elif self.position == 3:
             tones = [
-                (self.root, 0.5, "sustain"),
-                (self.root * 1.2, 0.3, "sustain"),
-                (self.root * 1.5, 0.3, "sustain"),
+                (self.root, AUDIO_AMP_ROOT_CHORD, "sustain"),
+                (self.root * AUDIO_CHORD_MINOR_THIRD, AUDIO_AMP_THIRD, "sustain"),
+                (self.root * AUDIO_CHORD_FIFTH, AUDIO_AMP_FIFTH, "sustain"),
             ]
         elif self.position == 4:
             tones = [
-                (self.root, 0.5, "decay"),
-                (self.root * 1.2, 0.3, "decay"),
-                (self.root * 1.5, 0.3, "decay"),
+                (self.root, AUDIO_AMP_ROOT_CHORD, "decay"),
+                (self.root * AUDIO_CHORD_MINOR_THIRD, AUDIO_AMP_THIRD, "decay"),
+                (self.root * AUDIO_CHORD_FIFTH, AUDIO_AMP_FIFTH, "decay"),
             ]
         elif self.position == 5:
             tones = [
-                (self.root, 0.4, "decay"),
-                (self.root * 1.2, 0.25, "decay"),
-                (self.root * 1.5, 0.25, "decay"),
-                (self.root / 2, 0.6, "decay"),
+                (self.root, AUDIO_AMP_ROOT_CHORD, "decay"),
+                (self.root * AUDIO_CHORD_MINOR_THIRD, AUDIO_AMP_THIRD_LIGHT, "decay"),
+                (self.root * AUDIO_CHORD_FIFTH, AUDIO_AMP_FIFTH_LIGHT, "decay"),
+                (self.root * AUDIO_CHORD_OCTAVE_DOWN, AUDIO_AMP_BASS, "decay"),
             ]
         elif self.position >= 6:
             tones = [
-                (self.root, 0.35, "decay"),
-                (self.root * 1.2, 0.2, "decay"),
-                (self.root * 1.5, 0.2, "decay"),
-                (self.root / 2, 0.5, "decay"),
-                (self.root * 2, 0.7, "staccato"),
+                (self.root, AUDIO_AMP_ROOT_FULL, "decay"),
+                (self.root * AUDIO_CHORD_MINOR_THIRD, AUDIO_AMP_THIRD_LIGHT, "decay"),
+                (self.root * AUDIO_CHORD_FIFTH, AUDIO_AMP_FIFTH_LIGHT, "decay"),
+                (self.root * AUDIO_CHORD_OCTAVE_DOWN, AUDIO_AMP_BASS_LIGHT, "decay"),
+                (self.root * AUDIO_CHORD_OCTAVE_UP, AUDIO_AMP_HIGH_STACCATO, "staccato"),
             ]
         return tones
 
@@ -78,14 +99,14 @@ class HitSound:
             wave = np.sin(2 * np.pi * freq * t)
 
             if env_type == "decay":
-                envelope = np.exp(-t * 3)
+                envelope = np.exp(-t * AUDIO_DECAY_RATE)
             elif env_type == "sustain":
                 envelope = np.ones_like(t)
-                fade_start = int(len(t) * 0.85)
+                fade_start = int(len(t) * AUDIO_SUSTAIN_FADE_START)
                 if fade_start < len(t):
                     envelope[fade_start:] = np.linspace(1, 0, len(t) - fade_start)
             elif env_type == "staccato":
-                envelope = np.exp(-t * 15)
+                envelope = np.exp(-t * AUDIO_STACCATO_RATE)
 
             composite += wave * envelope * amp
 

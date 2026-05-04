@@ -1,92 +1,138 @@
-# Draft: Musical Sound Effects for Asteroid Hits
+# Draft: Musical Sound Effects for Asteroid Hits - Combo System
 
-## Feature Request
-Add sound effects when player shoots an asteroid:
-- Base tone plays on hit
-- If subsequent hits within 0.5 seconds, tone goes up through the scale
-- Question: Use MIDI or generate tones programmatically?
+## User Decisions (Confirmed)
 
-## Technical Analysis
+### Scale: A Minor Pentatonic
+Frequencies (Hz):
+- A4 = 440.00 (root)
+- C5 = 523.25 (minor third)
+- D5 = 587.33 (fourth)
+- E5 = 659.25 (fifth)
+- G5 = 783.99 (minor seventh)
 
-### Sound Options
+### Combo Behavior
+- 0.5 second timeout between hits to maintain combo
+- When reach position 7 (max), stay at top until combo breaks
 
-**Option A: Pygame Mixer with Generated Tones**
-- Use `pygame.mixer` and `pygame.sndarray` to generate sine waves
-- Pros: No external files, programmatic control of pitch
-- Cons: Requires audio generation code
+### 7-Stage Combo Sound Design
 
-**Option B: Pre-made Sound Files**
-- Create/load WAV files for each scale note
-- Pros: Simple playback with `pygame.mixer.Sound()`
-- Cons: Need multiple files, less flexible
+| Position | Duration | Description | Tones |
+|----------|----------|-------------|-------|
+| 1 | 0.1s | Simple tone | Root note only |
+| 2 | 0.2s | Simple tone, longer | Root note only |
+| 3 | 2.0s | Sustained root | Root note sustained |
+| 4 | 2.0s | Chord | Root + third + fifth (minor triad) |
+| 5 | 0.3s | Short chord | Root + third + fifth (shorter) |
+| 6 | 0.3s | Chord + bass | Chord + bass octave (A3 = 220Hz) |
+| 7 | 0.3s | Full arrangement | Chord + bass + staccato high octave (A5 = 880Hz) |
 
-**Option C: MIDI**
-- Pygame has `pygame.midi` module
-- Pros: Native musical scale support
-- Cons: More complex, may require MIDI setup on user's machine
+## Technical Design
 
-**Recommendation**: Option A (generated tones) - gives most control, no external files needed
+### Class Structure
 
-### Implementation Requirements
+```python
+class HitSound:
+    def __init__(self, combo_position, root_frequency):
+        self.position = combo_position
+        self.root = root_frequency
+        self.duration = self._get_duration()
+        self.tones = self._build_tones()
+    
+    def _get_duration(self):
+        durations = [0.1, 0.2, 2.0, 2.0, 0.3, 0.3, 0.3]
+        return durations[self.position]
+    
+    def _build_tones(self):
+        # Returns list of (frequency, amplitude_ratio, envelope_type)
+        # envelope_type: 'decay', 'sustain', 'staccato'
+        pass
+    
+    def generate_waveform(self, sample_rate=44100):
+        # Generate combined waveform from all tones
+        # Apply envelopes
+        pass
 
-**State Tracking**:
-- Track last hit timestamp
-- Track current scale position (0-7 for C major scale: C-D-E-F-G-A-B-C)
-- Reset scale position if >0.5s since last hit
+class ComboTracker:
+    def __init__(self, timeout=0.5):
+        self.last_hit_time = 0
+        self.combo_position = 0
+        self.timeout = timeout
+        self.scale = [440.0, 523.25, 587.33, 659.25, 783.99]  # A minor pentatonic
+    
+    def on_hit(self, current_time):
+        if current_time - self.last_hit_time > self.timeout:
+            self.combo_position = 0
+        else:
+            self.combo_position = min(self.combo_position + 1, 6)
+        
+        self.last_hit_time = current_time
+        return self.combo_position, self.scale[self.combo_position % len(self.scale)]
+```
 
-**Scale Selection**:
-- C Major pentatonic (C-D-E-G-A) - sounds "spacey"/ethereal
-- C Major (C-D-E-F-G-A-B-C) - full scale
-- User preference needed
+### Audio Generation with pygame.sndarray
 
-**Audio Generation**:
-- Generate sine wave tones at specific frequencies
-- Apply envelope (attack/decay) for better sound
-- Keep sounds short (0.1-0.2 seconds)
+```python
+import numpy as np
+import pygame
+from pygame import sndarray
 
-### Musical Scale Frequencies (Hz)
-C4 = 261.63
-D4 = 293.66
-E4 = 329.63
-F4 = 349.23
-G4 = 392.00
-A4 = 440.00
-B4 = 493.88
-C5 = 523.25
+def generate_tone(frequency, duration, sample_rate=44100, envelope='decay'):
+    t = np.linspace(0, duration, int(sample_rate * duration), False)
+    
+    # Generate sine wave
+    wave = np.sin(2 * np.pi * frequency * t)
+    
+    # Apply envelope
+    if envelope == 'decay':
+        # Exponential decay
+        env = np.exp(-t * 5)
+    elif envelope == 'sustain':
+        # Full volume then quick fade at end
+        env = np.ones_like(t)
+        fade_start = int(len(t) * 0.9)
+        env[fade_start:] = np.linspace(1, 0, len(t) - fade_start)
+    elif envelope == 'staccato':
+        # Quick attack and decay
+        env = np.exp(-t * 20)
+    
+    wave = wave * env
+    
+    # Convert to 16-bit PCM
+    audio = (wave * 32767).astype(np.int16)
+    
+    return audio
+```
 
-### Open Questions
+## Implementation Plan
 
-1. **Scale choice**: C Major pentatonic or full C Major?
-2. **Tone duration**: How long should each hit sound? (0.1s? 0.2s?)
-3. **Reset behavior**: After reaching top of scale, start over or stay at top?
-4. **Multiple rapid hits**: Should we queue sounds or interrupt previous?
-5. **Volume**: Constant or fade with combo length?
-
-## Implementation Approach
-
-**Files to Modify**:
-- `constants.py`: SOUND_* constants (scale frequencies, hit timeout, tone duration)
+**Files to Create/Modify**:
+- `audio.py`: New file with HitSound class, ComboTracker class, tone generation
+- `constants.py`: Add AUDIO_* constants (sample rate, timeout, scale frequencies)
 - `main.py`: 
-  - Add sound initialization in `run_game()`
-  - Track hit timing and combo state
-  - Generate/play tone in `check_collisions()` when asteroid is hit
-- New file (optional): `audio.py` - Sound generation utilities
-
-**Logic Flow**:
-```
-On asteroid hit:
-  current_time = now
-  if current_time - last_hit_time > 0.5:
-    scale_position = 0  # Reset to base note
-  else:
-    scale_position = (scale_position + 1) % len(scale)
-  
-  frequency = scale_frequencies[scale_position]
-  play_tone(frequency, duration)
-  last_hit_time = current_time
-```
+  - Initialize pygame.mixer in run_game()
+  - Create ComboTracker instance
+  - Call audio generation on asteroid hit
 
 **Guardrails**:
-- Must work on macOS (brew install sdl2 might be needed)
-- Graceful fallback if audio unavailable
-- No performance impact on game loop
+- Graceful fallback if audio initialization fails
+- No blocking audio calls in game loop
+- Minimal CPU impact (generate sounds on-demand, not every frame)
+
+## Open Questions
+None - all requirements specified by user.
+
+## Acceptance Criteria
+- [ ] Sound plays on each asteroid hit
+- [ ] Combo position increments if hit within 0.5s of previous
+- [ ] Combo resets to 0 if >0.5s between hits
+- [ ] Each of 7 combo stages produces correct sound:
+  - Pos 1: 0.1s simple tone
+  - Pos 2: 0.2s simple tone
+  - Pos 3: 2.0s sustained root
+  - Pos 4: 2.0s minor triad chord
+  - Pos 5: 0.3s minor triad chord
+  - Pos 6: 0.3s chord + bass octave
+  - Pos 7: 0.3s chord + bass + staccato high octave
+- [ ] After pos 7, stays at pos 7 until combo breaks
+- [ ] Uses A minor pentatonic scale
+- [ ] Game runs without audio errors
