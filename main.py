@@ -34,6 +34,7 @@ from constants import (
     GAME_OVER_RETRY_TEXT_SIZE,
     GAME_OVER_SUBTEXT_SIZE,
     GAME_OVER_TEXT_SIZE,
+    HUD_SCORE_SIZE,
     LEADERBOARD_ENTRY_SIZE,
     LEADERBOARD_MAX_NAME_LENGTH,
     LEADERBOARD_PROMPT_SIZE,
@@ -157,7 +158,19 @@ def check_collisions(asteroids, shots, player, explosion_particles):
     return player_hit, score_delta
 
 
-def draw(screen, drawable, starfield, explosion_particles):
+_hud_font = None
+
+
+def draw_score(screen, score):
+    global _hud_font
+    if _hud_font is None:
+        _hud_font = pygame.font.Font(None, HUD_SCORE_SIZE)
+    text = _hud_font.render(f"SCORE: {score}", True, "white")
+    text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, 40))
+    screen.blit(text, text_rect)
+
+
+def draw(screen, drawable, starfield, explosion_particles, score):
     screen.fill("black")
     starfield.draw(screen)
     for particle in explosion_particles:
@@ -165,15 +178,24 @@ def draw(screen, drawable, starfield, explosion_particles):
             particle.draw(screen)
     for d in drawable:
         d.draw(screen)
+    draw_score(screen, score)
     pygame.display.flip()
 
 
-def run_game(screen, starfield, run_hyperdrive=True):
+def run_game(screen, starfield, audio_enabled, run_hyperdrive=True):
     if run_hyperdrive:
         screen.fill("black")
         pygame.display.flip()
         clock = pygame.time.Clock()
         hyperdrive = Hyperdrive(starfield)
+
+        if audio_enabled:
+            try:
+                hyperdrive_sound = pygame.mixer.Sound("sfx/hyperdrive.mp3")
+                hyperdrive_sound.play()
+            except Exception as e:
+                print(f"Failed to play hyperdrive sound: {e}")
+
         while not hyperdrive.is_complete():
             dt = min(clock.tick(60) / 1000, MAX_DELTA_TIME)
             hyperdrive.update(dt)
@@ -181,20 +203,6 @@ def run_game(screen, starfield, run_hyperdrive=True):
             pygame.display.flip()
 
     reset_logger()
-
-    # Initialize audio
-    try:
-        pygame.mixer.init(frequency=AUDIO_SAMPLE_RATE, size=-16, channels=2, buffer=512)
-        audio_enabled = True
-    except Exception as e:
-        print(f"Audio initialization failed: {e}")
-        audio_enabled = False
-
-    # Initialize music
-    if audio_enabled:
-        music = init_music()
-    else:
-        music = None
 
     updatable, drawable, asteroids, shots = create_groups()
     explosion_particles = []
@@ -220,7 +228,7 @@ def run_game(screen, starfield, run_hyperdrive=True):
 
         if not _first_asteroid_spawned and len(asteroids) > 0:
             _first_asteroid_spawned = True
-            if music:
+            if audio_enabled:
                 start_music()
 
         player_hit, delta = check_collisions(asteroids, shots, player, explosion_particles)
@@ -234,7 +242,7 @@ def run_game(screen, starfield, run_hyperdrive=True):
         if player_hit:
             return True, score
 
-        draw(screen, drawable, starfield, explosion_particles)
+        draw(screen, drawable, starfield, explosion_particles, score)
 
 
 def draw_start_menu(screen, leaderboard, starfield):
@@ -294,53 +302,30 @@ def main():
     starfield = StarField()
     clock = pygame.time.Clock()
 
-    while True:
-        dt = clock.tick(60) / 1000
-        starfield.update(dt)
+    try:
+        pygame.mixer.init(frequency=AUDIO_SAMPLE_RATE, size=-16, channels=2, buffer=512)
+        audio_enabled = True
+        init_music()
+    except Exception as e:
+        print(f"Audio initialization failed: {e}")
+        audio_enabled = False
 
-        draw_start_menu(screen, leaderboard, starfield)
-
-        waiting = True
-        while waiting:
-            event = poll_events(menu_mode=True)
-            if event == "quit":
-                return
-            if event == "retry":
-                waiting = False
-
-        result, score = run_game(screen, starfield)
-        if result is False:
-            return
-
-        show_leaderboard = False
-        if leaderboard.is_high_score(score):
-            name = get_player_name(screen, score, starfield)
-            if name is None:
-                return
-            if name:
-                leaderboard.add_score(name, score)
-                show_leaderboard = True
-
-        go_to_start = False
-        retry = False
-        while not retry:
+    try:
+        while True:
             dt = clock.tick(60) / 1000
             starfield.update(dt)
 
-            draw_game_over(screen, score, starfield, leaderboard if show_leaderboard else None)
+            draw_start_menu(screen, leaderboard, starfield)
 
-            event = poll_events()
-            if event == "quit":
-                return
-            if event == "menu":
-                retry = True
-                go_to_start = True
-            if event == "retry":
-                retry = True
-                go_to_start = False
+            waiting = True
+            while waiting:
+                event = poll_events(menu_mode=True)
+                if event == "quit":
+                    return
+                if event == "retry":
+                    waiting = False
 
-        if not go_to_start:
-            result, score = run_game(screen, starfield)
+            result, score = run_game(screen, starfield, audio_enabled)
             if result is False:
                 return
 
@@ -352,6 +337,41 @@ def main():
                 if name:
                     leaderboard.add_score(name, score)
                     show_leaderboard = True
+
+            go_to_start = False
+            retry = False
+            while not retry:
+                dt = clock.tick(60) / 1000
+                starfield.update(dt)
+
+                draw_game_over(screen, score, starfield, leaderboard if show_leaderboard else None)
+
+                event = poll_events()
+                if event == "quit":
+                    return
+                if event == "menu":
+                    retry = True
+                    go_to_start = True
+                if event == "retry":
+                    retry = True
+                    go_to_start = False
+
+            if not go_to_start:
+                result, score = run_game(screen, starfield, audio_enabled)
+                if result is False:
+                    return
+
+                show_leaderboard = False
+                if leaderboard.is_high_score(score):
+                    name = get_player_name(screen, score, starfield)
+                    if name is None:
+                        return
+                    if name:
+                        leaderboard.add_score(name, score)
+                        show_leaderboard = True
+    finally:
+        if audio_enabled:
+            stop_music()
 
 
 if __name__ == "__main__":
